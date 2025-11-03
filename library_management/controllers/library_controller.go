@@ -26,27 +26,29 @@ func (c *LibraryController) Run() {
 	for {
 		c.displayMenu()
 		choice := c.readInput()
-		switch choice {
-		case "1":
-			c.addBook()
-		case "2":
-			c.removeBook()
-		case "3":
-			c.borrowBook()
-		case "4":
-			c.returnBook()
-		case "5":
-			c.listAvailableBooks()
-		case "6":
-			c.listBorrowedBooks()
-        case "7":
-            c.addMember()
-			fmt.Println("Exiting Library Management System. Goodbye!")
-			return
-		default:
-			fmt.Println("Invalid choice. Please try again.")
-		}
-	}
+				switch choice {
+				case "1":
+					c.addBook()
+				case "2":
+					c.removeBook()
+				case "3":
+					c.borrowBook()
+				case "4":
+					c.returnBook()
+				case "5":
+					c.listAvailableBooks()
+				case "6":
+					c.listBorrowedBooks()
+				case "7":
+					c.addMember()
+				case "8":
+					c.reserveBook()
+				case "q":
+					fmt.Println("Exiting Library Management System. Goodbye!")
+					return
+				default:
+					fmt.Println("Invalid choice. Please try again.")
+				}	}
 }
 
 func (c *LibraryController) displayMenu() {
@@ -58,8 +60,26 @@ func (c *LibraryController) displayMenu() {
 	fmt.Println("5. List all available books")
 	fmt.Println("6. List all borrowed books by a member")
     fmt.Println("7. Add a new member (Helper)")
+	fmt.Println("8. Reserve a book")
 	fmt.Println("q. Quit")
 	fmt.Print("Enter your choice: ")
+}
+
+func (c *LibraryController) reserveBook() {
+	bookID, err := c.readUintInput("Enter book ID to reserve: ")
+	if err != nil {
+		fmt.Println("Invalid Book ID.")
+		return
+	}
+	memberID, err := c.readUintInput("Enter member ID: ")
+	if err != nil {
+		fmt.Println("Invalid Member ID.")
+		return
+	}
+
+	if err := c.Service.ReserveBook(bookID, memberID); err != nil {
+		fmt.Println("Error reserving book:", err)
+	}
 }
 
 func (c *LibraryController) readInput() string {

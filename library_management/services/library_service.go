@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"library_management/models"
+	"sync"
 )
 
 type LibraryManager interface {
@@ -13,17 +14,23 @@ type LibraryManager interface {
 	ReturnBook(bookID uint, memberID uint) error
 	ListAvailableBooks() []models.Book
 	ListBorrowedBooks(memberID uint) []models.Book
+	ReserveBook(bookID uint, memberID uint) error
+	UnreserveBook(bookID uint)
+	GetBook(bookID uint) *models.Book
+	AddMember(member models.Member)
 }
 
 type Library struct {
 	Books   map[uint]models.Book
 	Members map[uint]models.Member
+	Mutex   *sync.Mutex
 }
 
 func NewLibrary() *Library {
 	return &Library{
 		Books:   make(map[uint]models.Book),
 		Members: make(map[uint]models.Member),
+		Mutex:   &sync.Mutex{},
 	}
 }
 
@@ -116,17 +123,113 @@ func (l *Library) ListAvailableBooks() []models.Book {
 }
 
 func (l *Library) ListBorrowedBooks(memberID uint) []models.Book {
+
 	if member, exists := l.Members[memberID]; exists {
+
 		return member.BorrowedBooks
+
 	}
+
 	return nil
+
 }
 
+
+
 func (l *Library) AddMember(member models.Member) {
+
     if _, exists := l.Members[member.ID]; exists {
+
         fmt.Printf("Member with ID %d already exists.\n", member.ID)
+
         return
+
     }
+
     l.Members[member.ID] = member
+
     fmt.Printf("Member %s added to the system.\n", member.Name)
+
+}
+
+
+
+func (l *Library) ReserveBook(bookID uint, memberID uint) error {
+
+	l.Mutex.Lock()
+
+	defer l.Mutex.Unlock()
+
+
+
+	book, ok := l.Books[bookID]
+
+	if !ok {
+
+		return errors.New("book not found")
+
+	}
+
+
+
+	if book.Status != "Available" {
+
+		return errors.New("book is not available for reservation")
+
+	}
+
+
+
+	book.Status = "Reserved"
+
+	l.Books[bookID] = book
+
+	fmt.Printf("Book %d reserved for member %d.\n", bookID, memberID)
+
+	return nil
+
+}
+
+
+
+func (l *Library) UnreserveBook(bookID uint) {
+
+	l.Mutex.Lock()
+
+	defer l.Mutex.Unlock()
+
+
+
+	book, ok := l.Books[bookID]
+
+	if ok && book.Status == "Reserved" {
+
+		book.Status = "Available"
+
+		l.Books[bookID] = book
+
+	}
+
+}
+
+
+
+func (l *Library) GetBook(bookID uint) *models.Book {
+
+	l.Mutex.Lock()
+
+	defer l.Mutex.Unlock()
+
+
+
+	book, ok := l.Books[bookID]
+
+	if !ok {
+
+		return nil
+
+	}
+
+	return &book
+
 }
